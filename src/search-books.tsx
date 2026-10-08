@@ -11,9 +11,10 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
-import { showFailureToast, useCachedPromise, usePromise } from "@raycast/utils";
+import { showFailureToast, useCachedPromise, useCachedState, usePromise } from "@raycast/utils";
 import { useMemo, useRef, useState } from "react";
 import { Book, BookFile, preferredFile, readerFile } from "./book";
+import { BookDetail } from "./book-detail";
 import { defaultApps } from "./default-apps";
 import { describeRefreshFailure } from "./failure";
 import { showFailure } from "./failure-toast";
@@ -27,6 +28,7 @@ export default function Command() {
   const { client, cache, preferences } = useMemo(loadLibrary, []);
   const { push } = useNavigation();
   const [tag, setTag] = useState(ALL_BOOKS);
+  const [showingDetail, setShowingDetail] = useCachedState("showing-detail", false);
   const [, setCacheVersion] = useState(0);
   const refreshCacheIcons = () => setCacheVersion((version) => version + 1);
 
@@ -88,6 +90,7 @@ export default function Command() {
   return (
     <List
       isLoading={isLoading}
+      isShowingDetail={showingDetail}
       searchBarPlaceholder="Search books by title, author or tag"
       searchBarAccessory={
         <List.Dropdown tooltip="Filter by tag" value={tag} onChange={setTag}>
@@ -115,9 +118,10 @@ export default function Command() {
             keywords={[...book.authors, ...book.tags, ...(book.year ? [String(book.year)] : [])]}
             accessories={[
               ...(cached ? [{ icon: Icon.HardDrive, tooltip: "Downloaded" }] : []),
-              ...(book.tags[0] ? [{ tag: book.tags[0] }] : []),
-              ...(book.year ? [{ text: String(book.year) }] : []),
+              ...(!showingDetail && book.tags[0] ? [{ tag: book.tags[0] }] : []),
+              ...(!showingDetail && book.year ? [{ text: String(book.year) }] : []),
             ]}
+            detail={showingDetail && <BookDetail book={book} cache={cache} url={client.bookUrl(book.id)} />}
             actions={
               <ActionPanel>
                 <Action
@@ -138,6 +142,12 @@ export default function Command() {
                   title="Copy Link"
                   content={client.bookUrl(book.id)}
                   shortcut={Keyboard.Shortcut.Common.Copy}
+                />
+                <Action
+                  title={showingDetail ? "Hide Details" : "Show Details"}
+                  icon={Icon.Sidebar}
+                  shortcut={{ modifiers: ["cmd"], key: "d" }}
+                  onAction={() => setShowingDetail(!showingDetail)}
                 />
                 <ActionPanel.Section>
                   {cached && (

@@ -17,6 +17,9 @@ interface Entry {
   updated: string;
   published?: string;
   author?: { name: string }[];
+  publisher?: { name: string };
+  "dcterms:language"?: string[];
+  summary?: string;
   category?: { "@_label": string }[];
   link?: Link[];
 }
@@ -26,12 +29,13 @@ const DOWNLOAD_PATH = /\/opds\/download\/(\d+)\/([^/]+)\/?$/;
 // Calibre stores an unknown publication date as year 101, which the server renders without zero padding.
 const UNDEFINED_YEAR = 101;
 const YEAR = /^(\d+)-/;
+const UNDETERMINED_LANGUAGE = "und";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
   parseTagValue: false,
   htmlEntities: true,
-  isArray: (name) => ["entry", "link", "author", "category"].includes(name),
+  isArray: (name) => ["entry", "link", "author", "category", "dcterms:language"].includes(name),
 });
 
 export class InvalidFeedError extends Error {
@@ -66,6 +70,9 @@ function parseEntry(entry: Entry): Book[] {
       authors: (entry.author ?? []).map((author) => author.name),
       tags: (entry.category ?? []).map((category) => category["@_label"]),
       year: year === UNDEFINED_YEAR ? undefined : year,
+      publisher: entry.publisher?.name,
+      languages: (entry["dcterms:language"] ?? []).filter((code) => code !== UNDETERMINED_LANGUAGE),
+      summary: entry.summary,
       updated: entry.updated,
       files: files.map(({ format, size, path }) => ({ format, size, path })),
     },

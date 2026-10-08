@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Book, preferredFile, readerFile } from "./book";
+import { Book, filesByPreference, preferredFile, readerFile } from "./book";
 
 const book = (...formats: string[]): Book => ({
   id: 1,
@@ -32,5 +32,16 @@ describe("readerFile", () => {
   it("has nothing for books only in formats the web reader cannot show", () => {
     expect(readerFile(book("mobi"))).toBeUndefined();
     expect(readerFile(book("azw3", "mobi"))).toBeUndefined();
+  });
+});
+
+describe("filesByPreference", () => {
+  it("lists the preferred file first and keeps the rest in preference order", () => {
+    expect(filesByPreference(book("azw3", "mobi", "pdf", "epub")).map((file) => file.format)).toEqual([
+      "pdf",
+      "epub",
+      "mobi",
+      "azw3",
+    ]);
   });
 });
