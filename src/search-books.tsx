@@ -15,10 +15,9 @@ import {
 import { showFailureToast, useCachedPromise, usePromise } from "@raycast/utils";
 import { useMemo, useRef, useState } from "react";
 import { Book, BookFile, preferredFile, readerFile } from "./book";
-import { AuthError, InvalidServerUrlError, NetworkError, ServerError } from "./calibre-web";
+import { AuthError, CatalogNotFoundError, InvalidServerUrlError, NetworkError } from "./calibre-web";
 import { defaultApps } from "./default-apps";
 import { fetchCatalog, loadLibrary } from "./library";
-import { InvalidFeedError } from "./opds";
 import { openBook } from "./open-book";
 import { OpenWith } from "./open-with";
 
@@ -168,26 +167,26 @@ export default function Command() {
 }
 
 function showRefreshError(error: Error, hasCachedBooks: boolean) {
-  const openPreferences = { title: "Open Preferences", onAction: () => openExtensionPreferences() };
+  const openPreferencesAction = { title: "Open Preferences", onAction: () => openExtensionPreferences() };
   if (error instanceof AuthError) {
     showToast({
       style: Toast.Style.Failure,
       title: "Calibre-Web rejected the credentials",
-      primaryAction: openPreferences,
+      primaryAction: openPreferencesAction,
     });
   } else if (error instanceof InvalidServerUrlError) {
     showToast({
       style: Toast.Style.Failure,
       title: "Invalid server URL",
-      message: "Include the scheme, as in https://books.example.com",
-      primaryAction: openPreferences,
+      message: "Use an http:// or https:// URL, such as https://books.example.com",
+      primaryAction: openPreferencesAction,
     });
-  } else if (error instanceof InvalidFeedError || (error instanceof ServerError && error.status === 404)) {
+  } else if (error instanceof CatalogNotFoundError) {
     showToast({
       style: Toast.Style.Failure,
       title: "No OPDS catalog at this URL",
       message: "Check the server URL, and that the user can see Recently Added books",
-      primaryAction: openPreferences,
+      primaryAction: openPreferencesAction,
     });
   } else if (error instanceof NetworkError) {
     showToast({
