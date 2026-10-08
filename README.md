@@ -20,6 +20,7 @@ npm run build      # also generates raycast-env.d.ts, which typecheck needs
 npm run lint
 npm run typecheck
 npm test
+npm run test:live  # against the server in .env.local (CALIBRE_URL, CALIBRE_USER, CALIBRE_PASSWORD)
 ```
 
 `npm run lint` runs ESLint and Prettier directly; `ray lint` rejects authors without a Raycast Store account.
