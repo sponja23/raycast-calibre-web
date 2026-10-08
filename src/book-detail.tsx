@@ -1,6 +1,7 @@
 import { Icon, List } from "@raycast/api";
-import { Book, filesByPreference, formatSize, languageName } from "./book";
+import { Book, filesByPreference } from "./book";
 import { FileCache } from "./file-cache";
+import { escapeMarkdown, formatSize, languageNames } from "./format";
 
 interface BookDetailProps {
   book: Book;
@@ -9,7 +10,11 @@ interface BookDetailProps {
 }
 
 export function BookDetail({ book, cache, url }: BookDetailProps) {
-  const markdown = [`## ${book.title}`, ...(book.summary ? [book.summary] : [])].join("\n\n");
+  const heading = `## ${escapeMarkdown(book.title)}`;
+  const markdown = book.summary ? `${heading}\n\n${escapeMarkdown(book.summary)}` : heading;
+  const languages = book.languages ?? [];
+  const hasBookFields =
+    book.authors.length > 0 || book.tags.length > 0 || book.year || book.publisher || languages.length > 0;
   return (
     <List.Item.Detail
       markdown={markdown}
@@ -30,8 +35,13 @@ export function BookDetail({ book, cache, url }: BookDetailProps) {
           )}
           {book.year && <List.Item.Detail.Metadata.Label title="Year" text={String(book.year)} />}
           {book.publisher && <List.Item.Detail.Metadata.Label title="Publisher" text={book.publisher} />}
-          {book.language && <List.Item.Detail.Metadata.Label title="Language" text={languageName(book.language)} />}
-          <List.Item.Detail.Metadata.Separator />
+          {languages.length > 0 && (
+            <List.Item.Detail.Metadata.Label
+              title={languages.length > 1 ? "Languages" : "Language"}
+              text={languageNames(languages)}
+            />
+          )}
+          {hasBookFields && <List.Item.Detail.Metadata.Separator />}
           {filesByPreference(book).map((file) => (
             <List.Item.Detail.Metadata.Label
               key={file.format}

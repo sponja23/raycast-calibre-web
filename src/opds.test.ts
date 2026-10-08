@@ -13,7 +13,7 @@ describe("parseFeed", () => {
       tags: ["Category Theory", "Mathematics"],
       year: 1998,
       publisher: "Springer",
-      language: "eng",
+      languages: ["eng"],
       summary: "A classic introduction.",
       updated: "2026-09-30T18:04:11+00:00",
       files: [
@@ -23,7 +23,7 @@ describe("parseFeed", () => {
     });
   });
 
-  it("handles several authors, missing optional fields, escaped titles and calibre's undefined date", () => {
+  it("handles several authors, missing optional fields, escaped titles and calibre's undefined date and language", () => {
     const { books } = parseFeed(fixture("new-page-1.xml"));
 
     expect(books[1]).toMatchObject({
@@ -33,7 +33,7 @@ describe("parseFeed", () => {
       tags: [],
       year: undefined,
       publisher: undefined,
-      language: undefined,
+      languages: [],
       summary: undefined,
     });
   });
@@ -42,6 +42,10 @@ describe("parseFeed", () => {
     const { books } = parseFeed(fixture("new-page-1.xml"));
 
     expect(books[2]).toMatchObject({ title: "1984", tags: ["Orwell's Novels"] });
+  });
+
+  it("reads every language of a book", () => {
+    expect(parseFeed(fixture("new-page-1.xml")).books[2].languages).toEqual(["eng", "fre"]);
   });
 
   it("returns the next page link while there is one", () => {
@@ -64,7 +68,7 @@ describe("parseFeed", () => {
       tags: ["Programming", "Software Engineering"],
       year: 2007,
       publisher: "Addison-Wesley",
-      language: "eng",
+      languages: ["eng"],
       updated: "2026-10-08T06:35:57+00:00",
       files: [{ format: "pdf", size: 6348530, path: "/opds/download/659/pdf/" }],
     });

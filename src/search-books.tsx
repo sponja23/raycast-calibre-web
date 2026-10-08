@@ -118,8 +118,8 @@ export default function Command() {
             keywords={[...book.authors, ...book.tags, ...(book.year ? [String(book.year)] : [])]}
             accessories={[
               ...(cached ? [{ icon: Icon.HardDrive, tooltip: "Downloaded" }] : []),
-              ...(book.tags[0] ? [{ tag: book.tags[0] }] : []),
-              ...(book.year ? [{ text: String(book.year) }] : []),
+              ...(!showingDetail && book.tags[0] ? [{ tag: book.tags[0] }] : []),
+              ...(!showingDetail && book.year ? [{ text: String(book.year) }] : []),
             ]}
             detail={showingDetail && <BookDetail book={book} cache={cache} url={client.bookUrl(book.id)} />}
             actions={
