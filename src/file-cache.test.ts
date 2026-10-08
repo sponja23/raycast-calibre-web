@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -6,6 +7,30 @@ import { BookFile } from "./book";
 import { FileCache, createFileCache } from "./file-cache";
 
 const pdf = (size: number): BookFile => ({ format: "pdf", size, path: `/opds/download/1/pdf/` });
+
+function gatedDownload() {
+  const gates = new Map<string, () => void>();
+  const download = async (path: string) =>
+    new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("0123456789"));
+          gates.set(path, () => {
+            try {
+              controller.close();
+            } catch {
+              // The reader already cancelled the stream.
+            }
+          });
+        },
+      }),
+    );
+  const release = async (path: string) => {
+    while (!gates.has(path)) await new Promise((resolve) => setTimeout(resolve, 1));
+    gates.get(path)!();
+  };
+  return { download, release };
+}
 
 let dir: string;
 let downloads: string[];
@@ -94,6 +119,20 @@ describe("open", () => {
     expect(a).toBe(b);
     expect(downloads).toHaveLength(1);
   });
+
+  it("reports progress to every caller sharing a download", async () => {
+    const files = cache();
+    const first: number[] = [];
+    const second: number[] = [];
+
+    await Promise.all([
+      files.open(1, pdf(33), (received) => first.push(received)),
+      files.open(1, pdf(33), (received) => second.push(received)),
+    ]);
+
+    expect(first.at(-1)).toBe(33);
+    expect(second.at(-1)).toBe(33);
+  });
 });
 
 describe("eviction", () => {
@@ -101,23 +140,39 @@ describe("eviction", () => {
   const tenBytes = async () => new Response("0123456789");
 
   it("removes the least recently opened books once the cache passes its limit", async () => {
-    const files = cache({ limitBytes: 25, download: tenBytes });
+    const launch = () => cache({ limitBytes: 25, download: tenBytes });
 
-    await files.open(1, book(1));
-    await files.open(2, book(2));
-    await files.open(1, book(1));
-    await files.open(3, book(3));
+    await launch().open(1, book(1));
+    await launch().open(2, book(2));
+    await launch().open(1, book(1));
+    await launch().open(3, book(3));
 
-    expect([1, 2, 3].filter((id) => files.isCached(id, book(id)))).toEqual([1, 3]);
+    expect([1, 2, 3].filter((id) => launch().isCached(id, book(id)))).toEqual([1, 3]);
+  });
+
+  it("never evicts a book opened earlier in the same session", async () => {
+    const files = cache({ limitBytes: 15, download: tenBytes });
+
+    const paths = await Promise.all([files.open(1, book(1)), files.open(2, book(2))]);
+
+    expect(paths.every((path) => existsSync(path))).toBe(true);
   });
 
   it("keeps the book just opened even when it alone exceeds the limit", async () => {
-    const files = cache({ limitBytes: 5, download: tenBytes });
+    const launch = () => cache({ limitBytes: 5, download: tenBytes });
 
-    await files.open(1, book(1));
-    await files.open(2, book(2));
+    await launch().open(1, book(1));
+    await launch().open(2, book(2));
 
-    expect([1, 2].filter((id) => files.isCached(id, book(id)))).toEqual([2]);
+    expect([1, 2].filter((id) => launch().isCached(id, book(id)))).toEqual([2]);
+  });
+
+  it("counts and removes partial downloads left behind by an earlier session", async () => {
+    await writeFile(join(dir, "7-100.pdf.part"), "x".repeat(100));
+
+    await cache({ limitBytes: 25, download: tenBytes }).open(1, book(1));
+
+    expect(await readdir(dir)).toEqual(["1-10.pdf"]);
   });
 
   it("neither counts nor removes files it did not download", async () => {
@@ -144,12 +199,40 @@ describe("remove and clear", () => {
     expect(await readdir(dir)).toHaveLength(1);
   });
 
-  it("clears the whole cache", async () => {
+  it("clears every cached book and leaves other files alone", async () => {
     const files = cache();
     await files.open(1, pdf(10));
+    await writeFile(join(dir, ".DS_Store"), "x");
 
     await files.clear();
 
+    expect(await readdir(dir)).toEqual([".DS_Store"]);
+  });
+
+  it("cancels a download of the book being removed", async () => {
+    const { download, release } = gatedDownload();
+    const files = cache({ download });
+
+    const opening = files.open(1, pdf(10)).catch((error: Error) => error);
+    const removing = files.remove(1);
+    await release(pdf(10).path);
+
+    expect(await opening).toBeInstanceOf(Error);
+    await removing;
     expect(files.isCached(1, pdf(10))).toBe(false);
+    expect(await readdir(dir)).toEqual([]);
+  });
+
+  it("cancels every download when the cache is cleared", async () => {
+    const { download, release } = gatedDownload();
+    const files = cache({ download });
+
+    const opening = files.open(1, pdf(10)).catch((error: Error) => error);
+    const clearing = files.clear();
+    await release(pdf(10).path);
+
+    expect(await opening).toBeInstanceOf(Error);
+    await clearing;
+    expect(await readdir(dir)).toEqual([]);
   });
 });
