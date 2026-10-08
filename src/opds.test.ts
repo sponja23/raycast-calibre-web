@@ -1,9 +1,6 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { fixture } from "./__fixtures__/fixture";
 import { parseFeed } from "./opds";
-
-const fixture = (name: string) => readFileSync(join(__dirname, "__fixtures__", name), "utf8");
 
 describe("parseFeed", () => {
   it("reads every book field from an entry", () => {

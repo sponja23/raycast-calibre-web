@@ -23,8 +23,9 @@ interface Entry {
 
 const ACQUISITION = "http://opds-spec.org/acquisition";
 const DOWNLOAD_PATH = /\/opds\/download\/(\d+)\/([^/]+)\/?$/;
-// Calibre stores an unknown publication date as 0101-01-01.
+// Calibre stores an unknown publication date as year 101, which the server renders without zero padding.
 const UNDEFINED_YEAR = 101;
+const YEAR = /^(\d+)-/;
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -33,8 +34,16 @@ const parser = new XMLParser({
   isArray: (name) => ["entry", "link", "author", "category"].includes(name),
 });
 
+export class InvalidFeedError extends Error {
+  constructor() {
+    super("The response is not an OPDS feed");
+    this.name = "InvalidFeedError";
+  }
+}
+
 export function parseFeed(xml: string): FeedPage {
   const feed = parser.parse(xml).feed;
+  if (!feed) throw new InvalidFeedError();
   const entries: Entry[] = feed.entry ?? [];
   const next = (feed.link as Link[] | undefined)?.find((link) => link["@_rel"] === "next")?.["@_href"];
   return { books: entries.flatMap(parseEntry), next };
@@ -48,7 +57,8 @@ function parseEntry(entry: Entry): Book[] {
   });
   if (files.length === 0) return [];
 
-  const year = entry.published ? Number(entry.published.slice(0, 4)) : undefined;
+  const yearMatch = entry.published ? YEAR.exec(entry.published) : null;
+  const year = yearMatch ? Number(yearMatch[1]) : undefined;
   return [
     {
       id: files[0].id,
