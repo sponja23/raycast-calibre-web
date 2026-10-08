@@ -15,6 +15,8 @@ const invalidServerUrl: Failure = {
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
+const downloadFailed = (message: string): Failure => ({ title: "Download failed", message, fixInPreferences: false });
+
 export function describeRefreshFailure(error: unknown, hasCachedBooks: boolean): Failure {
   if (error instanceof AuthError) return { title: "Calibre-Web rejected the credentials", fixInPreferences: true };
   if (error instanceof InvalidServerUrlError) return invalidServerUrl;
@@ -35,9 +37,9 @@ export function describeRefreshFailure(error: unknown, hasCachedBooks: boolean):
   return { title: "Could not refresh the library", message: messageOf(error), fixInPreferences: false };
 }
 
-// The catalog already loaded with these credentials, so a 401 on download means the user lacks the download role.
 export function describeDownloadFailure(error: unknown): Failure | undefined {
   if (error instanceof DownloadCancelledError) return undefined;
+  // The catalog already loaded with these credentials, so a 401 on download means the user lacks the download role.
   if (error instanceof AuthError) {
     return {
       title: "Calibre-Web refused the download",
@@ -47,7 +49,7 @@ export function describeDownloadFailure(error: unknown): Failure | undefined {
   }
   if (error instanceof InvalidServerUrlError) return invalidServerUrl;
   if (error instanceof ServerError && error.status === 404) {
-    return { title: "Download failed", message: "The book is no longer on the server", fixInPreferences: false };
+    return downloadFailed("The book is no longer on the server");
   }
-  return { title: "Download failed", message: messageOf(error), fixInPreferences: false };
+  return downloadFailed(messageOf(error));
 }

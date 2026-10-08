@@ -238,6 +238,25 @@ describe("remove and clear", () => {
     expect(await readdir(dir)).toEqual([]);
   });
 
+  it("cancels a download the cache is committing", async () => {
+    let clearing: Promise<void> | undefined;
+    const files: FileCache = createFileCache({
+      dir,
+      limitBytes: 1_000_000,
+      download: async () => new Response("0123456789"),
+      now: () => {
+        clearing ??= files.clear();
+        return new Date();
+      },
+    });
+
+    const opened = await files.open(1, pdf(10)).catch((error: Error) => error);
+    await clearing;
+
+    expect(opened).toBeInstanceOf(DownloadCancelledError);
+    expect(await readdir(dir)).toEqual([]);
+  });
+
   it("cancels a download still waiting for the server to respond", async () => {
     let requested!: () => void;
     const requesting = new Promise<void>((resolve) => (requested = resolve));

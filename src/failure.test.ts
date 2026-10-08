@@ -39,6 +39,15 @@ describe("describeRefreshFailure", () => {
     });
   });
 
+  it.each([
+    new AuthError(),
+    new InvalidServerUrlError("books.example.com"),
+    new CatalogNotFoundError(),
+    new ServerError(500),
+  ])("describes %s the same whether or not the library is cached", (error) => {
+    expect(describeRefreshFailure(error, true)).toEqual(describeRefreshFailure(error, false));
+  });
+
   it("passes any other failure's message through", () => {
     expect(describeRefreshFailure(new ServerError(500), false)).toEqual({
       title: "Could not refresh the library",
@@ -62,8 +71,9 @@ describe("describeDownloadFailure", () => {
   });
 
   it("sends the user to the preferences when the server URL is not http or https", () => {
-    expect(describeDownloadFailure(new InvalidServerUrlError("books.example.com"))).toMatchObject({
+    expect(describeDownloadFailure(new InvalidServerUrlError("books.example.com"))).toEqual({
       title: "Invalid server URL",
+      message: "Use an http:// or https:// URL, such as https://books.example.com",
       fixInPreferences: true,
     });
   });
