@@ -1,18 +1,22 @@
-import { Action, ActionPanel, List, getApplications } from "@raycast/api";
+import { Action, ActionPanel, List } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { Book, BookFile } from "./book";
+import { appsFor } from "./default-apps";
 import { FileCache } from "./file-cache";
-import { downloadWithToast, openBook } from "./open-book";
+import { openBook } from "./open-book";
 
-export function OpenWith({ book, file, files }: { book: Book; file: BookFile; files: FileCache }) {
-  const { data: apps, isLoading } = usePromise(
-    async () => getApplications(await downloadWithToast(files, book.id, file)),
-    [],
-    { onError: () => undefined },
-  );
+interface OpenWithProps {
+  book: Book;
+  file: BookFile;
+  cache: FileCache;
+  onOpened: () => void;
+}
+
+export function OpenWith({ book, file, cache, onOpened }: OpenWithProps) {
+  const { data: apps, isLoading } = usePromise(appsFor, [file.format]);
 
   return (
-    <List isLoading={isLoading} navigationTitle={`Open ${book.title} With`}>
+    <List isLoading={isLoading} navigationTitle={`Open ${book.title} with`}>
       {apps?.map((app) => (
         <List.Item
           key={app.path}
@@ -20,7 +24,10 @@ export function OpenWith({ book, file, files }: { book: Book; file: BookFile; fi
           icon={{ fileIcon: app.path }}
           actions={
             <ActionPanel>
-              <Action title={`Open in ${app.name}`} onAction={() => openBook(files, book.id, file, app)} />
+              <Action
+                title={`Open in ${app.name}`}
+                onAction={() => openBook(cache, book.id, file, app).then(onOpened)}
+              />
             </ActionPanel>
           }
         />

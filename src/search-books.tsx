@@ -1,39 +1,45 @@
 import {
   Action,
   ActionPanel,
+  Alert,
+  Application,
   Icon,
   Keyboard,
   List,
   Toast,
+  confirmAlert,
   openExtensionPreferences,
   showToast,
   useNavigation,
 } from "@raycast/api";
-import { useCachedPromise, usePromise } from "@raycast/utils";
-import { useMemo, useState } from "react";
-import { Book, preferredFile, readerFile } from "./book";
+import { showFailureToast, useCachedPromise, usePromise } from "@raycast/utils";
+import { useMemo, useRef, useState } from "react";
+import { Book, BookFile, preferredFile, readerFile } from "./book";
+import { AuthError, NetworkError } from "./calibre-web";
 import { defaultApps } from "./default-apps";
-import { loadLibrary } from "./library";
+import { fetchCatalog, loadLibrary } from "./library";
 import { openBook } from "./open-book";
 import { OpenWith } from "./open-with";
-import { AuthError, NetworkError } from "./server";
 
 const ALL_BOOKS = "";
 
 export default function Command() {
-  const { server, files } = useMemo(loadLibrary, []);
+  const { client, cache, preferences } = useMemo(loadLibrary, []);
   const { push } = useNavigation();
   const [tag, setTag] = useState(ALL_BOOKS);
   const [, setCacheVersion] = useState(0);
   const refreshCacheIcons = () => setCacheVersion((version) => version + 1);
 
-  const { data: books = [], isLoading } = useCachedPromise(server.fetchCatalog, [], {
-    keepPreviousData: true,
-    onError: showRefreshError,
-  });
+  const hasCachedBooks = useRef(false);
+  const { data: books = [], isLoading } = useCachedPromise(
+    fetchCatalog,
+    [preferences.serverUrl, preferences.username],
+    { onError: (error) => showRefreshError(error, hasCachedBooks.current) },
+  );
+  hasCachedBooks.current = books.length > 0;
 
   const formats = useMemo(() => [...new Set(books.flatMap((book) => book.files.map((file) => file.format)))], [books]);
-  const { data: apps = {} } = usePromise(defaultApps, [formats]);
+  const { data: apps } = usePromise(defaultApps, [formats], { onError: () => undefined });
 
   const tagCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -43,25 +49,40 @@ export default function Command() {
 
   const shown = tag === ALL_BOOKS ? books : books.filter((book) => book.tags.includes(tag));
 
-  function openWith(book: Book) {
-    const file = preferredFile(book);
-    if (file) push(<OpenWith book={book} file={file} files={files} />);
+  function openWith(book: Book, file: BookFile) {
+    push(<OpenWith book={book} file={file} cache={cache} onOpened={refreshCacheIcons} />);
   }
 
-  async function openDefault(book: Book) {
-    const file = preferredFile(book);
-    if (!file) return;
-    const app = apps[file.format];
-    if (!app) {
+  async function openDefault(book: Book, file: BookFile, app: Application | undefined) {
+    if (apps && !app) {
       await showToast({
         style: Toast.Style.Failure,
         title: `No app opens .${file.format} files`,
-        primaryAction: { title: "Open with", onAction: () => openWith(book) },
+        primaryAction: { title: "Open with", onAction: () => openWith(book, file) },
       });
       return;
     }
-    await openBook(files, book.id, file, app);
+    await openBook(cache, book.id, file, app);
     refreshCacheIcons();
+  }
+
+  async function changeCache(change: () => Promise<void>, done: string) {
+    try {
+      await change();
+      await showToast({ style: Toast.Style.Success, title: done });
+    } catch (error) {
+      await showFailureToast(error, { title: "Could not change the cache" });
+    }
+    refreshCacheIcons();
+  }
+
+  async function clearCache() {
+    const confirmed = await confirmAlert({
+      title: "Clear the book cache?",
+      message: "Every downloaded book is deleted and downloaded again on its next open.",
+      primaryAction: { title: "Clear Cache", style: Alert.ActionStyle.Destructive },
+    });
+    if (confirmed) await changeCache(cache.clear, "Cache cleared");
   }
 
   return (
@@ -81,9 +102,10 @@ export default function Command() {
     >
       {shown.map((book) => {
         const file = preferredFile(book);
+        if (!file) return null;
         const reader = readerFile(book);
-        const cached = file !== undefined && files.isCached(book.id, file);
-        const app = file && apps[file.format];
+        const cached = cache.isCached(book.id, file);
+        const app = apps?.[file.format];
         return (
           <List.Item
             key={book.id}
@@ -101,20 +123,20 @@ export default function Command() {
                 <Action
                   title={app ? `Open in ${app.name}` : "Open"}
                   icon={Icon.Book}
-                  onAction={() => openDefault(book)}
+                  onAction={() => openDefault(book, file, app)}
                 />
                 {reader && (
-                  <Action.OpenInBrowser title="Open in Browser" url={server.readerUrl(book.id, reader.format)} />
+                  <Action.OpenInBrowser title="Open in Browser" url={client.readerUrl(book.id, reader.format)} />
                 )}
                 <Action
                   title="Open with"
                   icon={Icon.AppWindowList}
                   shortcut={Keyboard.Shortcut.Common.OpenWith}
-                  onAction={() => openWith(book)}
+                  onAction={() => openWith(book, file)}
                 />
                 <Action.CopyToClipboard
                   title="Copy Link"
-                  content={server.bookUrl(book.id)}
+                  content={client.bookUrl(book.id)}
                   shortcut={Keyboard.Shortcut.Common.Copy}
                 />
                 <ActionPanel.Section>
@@ -124,7 +146,7 @@ export default function Command() {
                       icon={Icon.Trash}
                       style={Action.Style.Destructive}
                       shortcut={Keyboard.Shortcut.Common.Remove}
-                      onAction={() => files.remove(book.id).then(refreshCacheIcons)}
+                      onAction={() => changeCache(() => cache.remove(book.id), "Removed from cache")}
                     />
                   )}
                   <Action
@@ -132,7 +154,7 @@ export default function Command() {
                     icon={Icon.Trash}
                     style={Action.Style.Destructive}
                     shortcut={Keyboard.Shortcut.Common.RemoveAll}
-                    onAction={() => files.clear().then(refreshCacheIcons)}
+                    onAction={clearCache}
                   />
                 </ActionPanel.Section>
               </ActionPanel>
@@ -144,7 +166,7 @@ export default function Command() {
   );
 }
 
-function showRefreshError(error: Error) {
+function showRefreshError(error: Error, hasCachedBooks: boolean) {
   if (error instanceof AuthError) {
     showToast({
       style: Toast.Style.Failure,
@@ -152,7 +174,11 @@ function showRefreshError(error: Error) {
       primaryAction: { title: "Open Preferences", onAction: () => openExtensionPreferences() },
     });
   } else if (error instanceof NetworkError) {
-    showToast({ style: Toast.Style.Failure, title: "Offline", message: "Showing the cached library" });
+    showToast({
+      style: Toast.Style.Failure,
+      title: "Could not reach the server",
+      message: hasCachedBooks ? "Showing the cached library" : undefined,
+    });
   } else {
     showToast({ style: Toast.Style.Failure, title: "Could not refresh the library", message: error.message });
   }
