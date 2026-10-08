@@ -1,6 +1,8 @@
 import { Application, Toast, open, showToast } from "@raycast/api";
 import { showFailureToast } from "@raycast/utils";
 import { BookFile } from "./book";
+import { describeDownloadFailure } from "./failure";
+import { showFailure } from "./failure-toast";
 import { FileCache } from "./file-cache";
 
 async function downloadWithToast(cache: FileCache, id: number, file: BookFile): Promise<string> {
@@ -14,9 +16,7 @@ async function downloadWithToast(cache: FileCache, id: number, file: BookFile): 
     await toast.hide();
     return path;
   } catch (error) {
-    toast.style = Toast.Style.Failure;
-    toast.title = "Download failed";
-    toast.message = error instanceof Error ? error.message : String(error);
+    await showFailure(describeDownloadFailure(error), toast);
     throw error;
   }
 }

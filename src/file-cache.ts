@@ -22,6 +22,13 @@ export interface FileCacheOptions {
   now?: () => Date;
 }
 
+export class DownloadCancelledError extends Error {
+  constructor() {
+    super("The download was cancelled");
+    this.name = "DownloadCancelledError";
+  }
+}
+
 interface Download {
   id: number;
   done: Promise<string>;
@@ -130,7 +137,11 @@ export function createFileCache({ dir, limitBytes, download, now = () => new Dat
         await evict();
         return join(dir, name);
       });
-    })().finally(() => downloads.delete(name));
+    })()
+      .catch((error: unknown) => {
+        throw entry.controller.signal.aborted ? new DownloadCancelledError() : error;
+      })
+      .finally(() => downloads.delete(name));
     downloads.set(name, entry);
     return entry;
   }

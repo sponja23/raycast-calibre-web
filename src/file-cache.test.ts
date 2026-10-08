@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { BookFile } from "./book";
-import { FileCache, createFileCache } from "./file-cache";
+import { DownloadCancelledError, FileCache, createFileCache } from "./file-cache";
 
 const pdf = (size: number): BookFile => ({ format: "pdf", size, path: `/opds/download/1/pdf/` });
 
@@ -36,7 +36,9 @@ let dir: string;
 let downloads: string[];
 let clock: number;
 
-function cache(options: { limitBytes?: number; download?: (path: string) => Promise<Response> } = {}): FileCache {
+function cache(
+  options: { limitBytes?: number; download?: (path: string, signal: AbortSignal) => Promise<Response> } = {},
+): FileCache {
   return createFileCache({
     dir,
     limitBytes: options.limitBytes ?? 1_000_000,
@@ -217,7 +219,7 @@ describe("remove and clear", () => {
     const removing = files.remove(1);
     await release(pdf(10).path);
 
-    expect(await opening).toBeInstanceOf(Error);
+    expect(await opening).toBeInstanceOf(DownloadCancelledError);
     await removing;
     expect(files.isCached(1, pdf(10))).toBe(false);
     expect(await readdir(dir)).toEqual([]);
@@ -231,8 +233,27 @@ describe("remove and clear", () => {
     const clearing = files.clear();
     await release(pdf(10).path);
 
-    expect(await opening).toBeInstanceOf(Error);
+    expect(await opening).toBeInstanceOf(DownloadCancelledError);
     await clearing;
+    expect(await readdir(dir)).toEqual([]);
+  });
+
+  it("cancels a download still waiting for the server to respond", async () => {
+    let requested!: () => void;
+    const requesting = new Promise<void>((resolve) => (requested = resolve));
+    const files = cache({
+      download: (_path, signal) =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener("abort", () => reject(signal.reason));
+          requested();
+        }),
+    });
+
+    const opening = files.open(1, pdf(10)).catch((error: Error) => error);
+    await requesting;
+    await files.clear();
+
+    expect(await opening).toBeInstanceOf(DownloadCancelledError);
     expect(await readdir(dir)).toEqual([]);
   });
 });
