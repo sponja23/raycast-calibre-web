@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/terms/" xmlns:dcterms="http://purl.org/dc/terms/">
+  <icon>/static/favicon.ico</icon>
+  <id>urn:uuid:2853dacf-ed79-42f5-8e8a-a7bb3d1ae6a2</id>
+  <updated>2026-10-08T15:23:34+00:00</updated>
+  <link rel="self"
+        href="/opds/new?"
+        type="application/atom+xml;profile=opds-catalog;type=feed;kind=navigation"/>
+  <link rel="start"
+        href="/opds"
+        type="application/atom+xml;profile=opds-catalog;type=feed;kind=navigation"/>
+  <link rel="up"
+        href="/opds"
+        type="application/atom+xml;profile=opds-catalog;type=feed;kind=navigation"/>
+
+
+  <link rel="next"
+        title="Next"
+        href="/opds/new?offset=60"
+        type="application/atom+xml;profile=opds-catalog;type=feed;kind=navigation"/>
+
+
+    <link rel="search"
+      href="/opds/osd"
+      type="application/opensearchdescription+xml"/>
+  <link type="application/atom+xml" rel="search" title="Search" href="/opds/search/{searchTerms}" />
+  <title>Calibre-Web Automated</title>
+  <author>
+    <name>Calibre-Web Automated</name>
+    <uri>https://github.com/crocodilestick/calibre-web-automated</uri>
+  </author>
+
+  
+  
+  <entry>
+    <title>xUnit Test Patterns: Refactoring Test Code</title>
+    <id>urn:uuid:d1538ba1-5ed3-4eef-b10e-3875bd38629f</id>
+    <updated>2026-10-08T06:35:57+00:00</updated>
+    
+      <author>
+        <name>Gerard Meszaros</name>
+      </author>
+    
+    
+      <publisher>
+        <name>Addison-Wesley</name>
+      </publisher>
+    
+    <published>2007-01-01T12:00:00+00:00</published>
+    
+      <dcterms:language>eng</dcterms:language>
+    
+    
+    <category scheme="http://www.bisg.org/standards/bisac_subject/index.html"
+              term="Programming"
+              label="Programming"/>
+    
+    <category scheme="http://www.bisg.org/standards/bisac_subject/index.html"
+              term="Software Engineering"
+              label="Software Engineering"/>
+    
+    
+    
+    <link type="image/jpeg" href="/opds/cover/659" rel="http://opds-spec.org/image"/>
+    <link type="image/jpeg" href="/opds/cover/659" rel="http://opds-spec.org/image/thumbnail"/>
+    
+    
+    <link rel="http://opds-spec.org/acquisition" href="/opds/download/659/pdf/"
+          length="6348530" mtime="2026-10-08T06:35:57+00:00" type="application/pdf"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Visual Group Theory</title>
+    <id>urn:uuid:c4845011-3dfc-42d6-81e8-3e26d90b3181</id>
+    <updated>2026-10-08T06:35:55+00:00</updated>
+    
+      <author>
+        <name>Nathan Carter</name>
+      </author>
+    
+    
+      <publisher>
+        <name>Mathematical Association of America</name>
+      </publisher>
+    
+    <published>2009-01-01T12:00:00+00:00</published>
+    
+      <dcterms:language>eng</dcterms:language>
+    
+    
+    <category scheme="http://www.bisg.org/standards/bisac_subject/index.html"
+              term="Abstract Algebra"
+              label="Abstract Algebra"/>
+    
+    <category scheme="http://www.bisg.org/standards/bisac_subject/index.html"
+              term="Mathematics"
+              label="Mathematics"/>
+    
+    
+    
+    <link type="image/jpeg" href="/opds/cover/658" rel="http://opds-spec.org/image"/>
+    <link type="image/jpeg" href="/opds/cover/658" rel="http://opds-spec.org/image/thumbnail"/>
+    
+    
+    <link rel="http://opds-spec.org/acquisition" href="/opds/download/658/pdf/"
+          length="3965687" mtime="2026-10-08T06:35:55+00:00" type="application/pdf"/>
+    
+  </entry>
+  
+  <entry>
+    <title>The Theory of Groups: An Introduction</title>
+    <id>urn:uuid:4d2ed862-1838-44e1-ad87-47d73053f942</id>
+    <updated>2026-10-08T06:35:50+00:00</updated>
+    
+      <author>
+        <name>Joseph J. Rotman</name>
+      </author>
+    
+    
+      <publisher>
+        <name>Allyn and Bacon</name>
+      </publisher>
+    
+    <published>1973-01-01T12:00:00+00:00</published>
+    
+      <dcterms:language>eng</dcterms:language>
+    
+    
+    <category scheme="http://www.bisg.org/standards/bisac_subject/index.html"
+              term="Abstract Algebra"
+              label="Abstract Algebra"/>
+    
+    <category scheme="http://www.bisg.org/standards/bisac_subject/index.html"
+              term="Mathematics"
+              label="Mathematics"/>
+    
+    
+    
+    <link type="image/jpeg" href="/opds/cover/656" rel="http://opds-spec.org/image"/>
+    <link type="image/jpeg" href="/opds/cover/656" rel="http://opds-spec.org/image/thumbnail"/>
+    
+    
+    <link rel="http://opds-spec.org/acquisition" href="/opds/download/656/pdf/"
+          length="21769099" mtime="2026-10-08T06:35:50+00:00" type="application/pdf"/>
+    
+  </entry>
+</feed>

@@ -46,4 +46,20 @@ describe("parseFeed", () => {
   it("parses a feed with a single entry", () => {
     expect(parseFeed(fixture("new-page-2.xml")).books.map((book) => book.title)).toEqual(["Gödel, Escher, Bach"]);
   });
+
+  it("parses a page recorded from the live server", () => {
+    const { books, next } = parseFeed(fixture("recorded-new-page.xml"));
+
+    expect(next).toBe("/opds/new?offset=60");
+    expect(books[0]).toEqual({
+      id: 659,
+      title: "xUnit Test Patterns: Refactoring Test Code",
+      authors: ["Gerard Meszaros"],
+      tags: ["Programming", "Software Engineering"],
+      year: 2007,
+      updated: "2026-10-08T06:35:57+00:00",
+      files: [{ format: "pdf", size: 6348530, path: "/opds/download/659/pdf/" }],
+    });
+    expect(books.map((book) => book.id)).toEqual([659, 658, 656]);
+  });
 });

@@ -55,7 +55,8 @@
     "fix-lint": "eslint . --fix && prettier --write .",
     "lint": "eslint . && prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:live": "node --env-file=.env.local node_modules/vitest/vitest.mjs run live"
   },
   "dependencies": {
     "@raycast/api": "^2.7.1",
