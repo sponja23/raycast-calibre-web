@@ -74,6 +74,7 @@ export function createCalibreWebClient(
     try {
       response = await fetch(url, { headers: { Authorization: authorization }, signal });
     } catch (error) {
+      if (signal?.aborted) throw error;
       throw new NetworkError(error);
     }
     if (response.status === 401) throw new AuthError();

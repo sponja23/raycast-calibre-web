@@ -8,15 +8,15 @@ import {
   List,
   Toast,
   confirmAlert,
-  openExtensionPreferences,
   showToast,
   useNavigation,
 } from "@raycast/api";
 import { showFailureToast, useCachedPromise, usePromise } from "@raycast/utils";
 import { useMemo, useRef, useState } from "react";
 import { Book, BookFile, preferredFile, readerFile } from "./book";
-import { AuthError, CatalogNotFoundError, InvalidServerUrlError, NetworkError } from "./calibre-web";
 import { defaultApps } from "./default-apps";
+import { describeRefreshFailure } from "./failure";
+import { showFailure } from "./failure-toast";
 import { fetchCatalog, loadLibrary } from "./library";
 import { openBook } from "./open-book";
 import { OpenWith } from "./open-with";
@@ -34,7 +34,7 @@ export default function Command() {
   const { data: books = [], isLoading } = useCachedPromise(
     fetchCatalog,
     [preferences.serverUrl, preferences.username],
-    { onError: (error) => showRefreshError(error, hasCachedBooks.current) },
+    { onError: (error) => showFailure(describeRefreshFailure(error, hasCachedBooks.current)) },
   );
   hasCachedBooks.current = books.length > 0;
 
@@ -164,37 +164,4 @@ export default function Command() {
       })}
     </List>
   );
-}
-
-function showRefreshError(error: Error, hasCachedBooks: boolean) {
-  const openPreferencesAction = { title: "Open Preferences", onAction: () => openExtensionPreferences() };
-  if (error instanceof AuthError) {
-    showToast({
-      style: Toast.Style.Failure,
-      title: "Calibre-Web rejected the credentials",
-      primaryAction: openPreferencesAction,
-    });
-  } else if (error instanceof InvalidServerUrlError) {
-    showToast({
-      style: Toast.Style.Failure,
-      title: "Invalid server URL",
-      message: "Use an http:// or https:// URL, such as https://books.example.com",
-      primaryAction: openPreferencesAction,
-    });
-  } else if (error instanceof CatalogNotFoundError) {
-    showToast({
-      style: Toast.Style.Failure,
-      title: "No OPDS catalog at this URL",
-      message: "Check the server URL, and that the user can see Recently Added books",
-      primaryAction: openPreferencesAction,
-    });
-  } else if (error instanceof NetworkError) {
-    showToast({
-      style: Toast.Style.Failure,
-      title: "Could not reach the server",
-      message: hasCachedBooks ? "Showing the cached library" : undefined,
-    });
-  } else {
-    showToast({ style: Toast.Style.Failure, title: "Could not refresh the library", message: error.message });
-  }
 }

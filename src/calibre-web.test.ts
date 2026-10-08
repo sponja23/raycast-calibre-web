@@ -155,4 +155,17 @@ describe("download", () => {
       createCalibreWebClient(config, unauthorized).download("/opds/download/412/pdf/"),
     ).rejects.toBeInstanceOf(AuthError);
   });
+
+  it("rejects with the abort reason rather than a NetworkError when the caller aborts", async () => {
+    const fetch = (async (_input: string | URL, init?: RequestInit) => {
+      init?.signal?.throwIfAborted();
+      return new Response("%PDF-1.7");
+    }) as typeof globalThis.fetch;
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      createCalibreWebClient(config, fetch).download("/opds/download/412/pdf/", controller.signal),
+    ).rejects.toBe(controller.signal.reason);
+  });
 });
