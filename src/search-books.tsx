@@ -15,7 +15,7 @@ import {
 import { showFailureToast, useCachedPromise, usePromise } from "@raycast/utils";
 import { useMemo, useRef, useState } from "react";
 import { Book, BookFile, preferredFile, readerFile } from "./book";
-import { AuthError, NetworkError } from "./calibre-web";
+import { AuthError, CatalogNotFoundError, InvalidServerUrlError, NetworkError } from "./calibre-web";
 import { defaultApps } from "./default-apps";
 import { fetchCatalog, loadLibrary } from "./library";
 import { openBook } from "./open-book";
@@ -167,11 +167,26 @@ export default function Command() {
 }
 
 function showRefreshError(error: Error, hasCachedBooks: boolean) {
+  const openPreferencesAction = { title: "Open Preferences", onAction: () => openExtensionPreferences() };
   if (error instanceof AuthError) {
     showToast({
       style: Toast.Style.Failure,
       title: "Calibre-Web rejected the credentials",
-      primaryAction: { title: "Open Preferences", onAction: () => openExtensionPreferences() },
+      primaryAction: openPreferencesAction,
+    });
+  } else if (error instanceof InvalidServerUrlError) {
+    showToast({
+      style: Toast.Style.Failure,
+      title: "Invalid server URL",
+      message: "Use an http:// or https:// URL, such as https://books.example.com",
+      primaryAction: openPreferencesAction,
+    });
+  } else if (error instanceof CatalogNotFoundError) {
+    showToast({
+      style: Toast.Style.Failure,
+      title: "No OPDS catalog at this URL",
+      message: "Check the server URL, and that the user can see Recently Added books",
+      primaryAction: openPreferencesAction,
     });
   } else if (error instanceof NetworkError) {
     showToast({

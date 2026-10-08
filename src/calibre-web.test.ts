@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { fixture } from "./__fixtures__/fixture";
-import { AuthError, NetworkError, createCalibreWebClient } from "./calibre-web";
-import { InvalidFeedError } from "./opds";
+import {
+  AuthError,
+  CatalogNotFoundError,
+  InvalidServerUrlError,
+  NetworkError,
+  ServerError,
+  createCalibreWebClient,
+} from "./calibre-web";
 
 const config = { url: "https://books.example.ts.net/", username: "raycast", password: "s3cret" };
 
@@ -68,10 +74,10 @@ describe("fetchCatalog edge cases", () => {
     expect(requests).toHaveLength(2);
   });
 
-  it("rejects with an InvalidFeedError when the server answers with something other than a feed", async () => {
+  it("rejects with a CatalogNotFoundError when the server answers with something other than a feed", async () => {
     const { fetch } = fakeFetch({ "https://books.example.ts.net/opds/new": "<html><body>Login</body></html>" });
 
-    await expect(createCalibreWebClient(config, fetch).fetchCatalog()).rejects.toBeInstanceOf(InvalidFeedError);
+    await expect(createCalibreWebClient(config, fetch).fetchCatalog()).rejects.toBeInstanceOf(CatalogNotFoundError);
   });
 
   it("keeps the server's own links intact when it is mounted under a path", async () => {
@@ -91,6 +97,37 @@ describe("fetchCatalog edge cases", () => {
       "https://books.example.ts.net/calibre/opds/new",
       "https://books.example.ts.net/calibre/opds/download/3/mobi/",
     ]);
+  });
+});
+
+describe("misconfigured servers", () => {
+  it.each(["books.example.ts.net", "ftp://books.example.ts.net"])(
+    "rejects %s with an InvalidServerUrlError before making a request",
+    async (url) => {
+      const { fetch, requests } = fakeFetch({});
+
+      await expect(createCalibreWebClient({ ...config, url }, fetch).fetchCatalog()).rejects.toBeInstanceOf(
+        InvalidServerUrlError,
+      );
+      expect(requests).toEqual([]);
+    },
+  );
+
+  it("rejects with a CatalogNotFoundError when the server has no feed at the URL", async () => {
+    const { fetch } = fakeFetch({});
+
+    await expect(createCalibreWebClient(config, fetch).fetchCatalog()).rejects.toBeInstanceOf(CatalogNotFoundError);
+  });
+
+  it("exposes the HTTP status of other failures", async () => {
+    const fetch = (async () => new Response("Internal Server Error", { status: 500 })) as typeof globalThis.fetch;
+
+    const error = await createCalibreWebClient(config, fetch)
+      .fetchCatalog()
+      .catch((error: unknown) => error);
+
+    expect(error).toBeInstanceOf(ServerError);
+    expect((error as ServerError).status).toBe(500);
   });
 });
 

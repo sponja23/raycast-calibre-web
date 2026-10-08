@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "calibre-web",
-  "title": "Calibre-Web",
+  "title": "Calibre-Web Library",
   "description": "Search a Calibre-Web library and open its books",
   "icon": "icon.png",
   "author": "sponja23",
@@ -52,11 +52,12 @@
   "scripts": {
     "build": "ray build",
     "dev": "ray develop",
-    "fix-lint": "eslint . --fix && prettier --write .",
-    "lint": "eslint . && prettier --check .",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:live": "node --env-file=.env.local node_modules/vitest/vitest.mjs run live"
+    "test:live": "node --env-file=.env.local node_modules/vitest/vitest.mjs run live",
+    "publish": "npx @raycast/api@latest publish"
   },
   "dependencies": {
     "@raycast/api": "^2.7.1",
