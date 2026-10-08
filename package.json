@@ -1,0 +1,73 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "calibre-web",
+  "title": "Calibre-Web",
+  "description": "Search a Calibre-Web library and open its books",
+  "icon": "icon.png",
+  "author": "sponja23",
+  "license": "MIT",
+  "categories": [
+    "Productivity"
+  ],
+  "commands": [
+    {
+      "name": "search-books",
+      "title": "Search Books",
+      "description": "Search the library by title, author or tag",
+      "mode": "view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "serverUrl",
+      "title": "Server URL",
+      "description": "Base URL of the Calibre-Web server",
+      "type": "textfield",
+      "required": true,
+      "placeholder": "https://books.example.ts.net"
+    },
+    {
+      "name": "username",
+      "title": "Username",
+      "description": "Calibre-Web user with the download role",
+      "type": "textfield",
+      "required": true
+    },
+    {
+      "name": "password",
+      "title": "Password",
+      "description": "Password of the Calibre-Web user",
+      "type": "password",
+      "required": true
+    },
+    {
+      "name": "cacheLimitGb",
+      "title": "File Cache Limit (GB)",
+      "description": "Least recently opened books are removed past this size",
+      "type": "textfield",
+      "required": false,
+      "default": "2"
+    }
+  ],
+  "scripts": {
+    "build": "ray build",
+    "dev": "ray develop",
+    "fix-lint": "eslint . --fix && prettier --write .",
+    "lint": "eslint . && prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@raycast/api": "^2.7.1",
+    "@raycast/utils": "^2.3.2"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.2.0",
+    "@types/node": "22.19.17",
+    "@types/react": "19.0.10",
+    "eslint": "^9.39.5",
+    "prettier": "^3.9.9",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
+  }
+}
