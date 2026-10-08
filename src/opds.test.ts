@@ -12,6 +12,9 @@ describe("parseFeed", () => {
       authors: ["Saunders Mac Lane"],
       tags: ["Category Theory", "Mathematics"],
       year: 1998,
+      publisher: "Springer",
+      language: "eng",
+      summary: "A classic introduction.",
       updated: "2026-09-30T18:04:11+00:00",
       files: [
         { format: "epub", size: 1048576, path: "/opds/download/412/epub/" },
@@ -20,7 +23,7 @@ describe("parseFeed", () => {
     });
   });
 
-  it("handles several authors, no tags, escaped titles and calibre's undefined date", () => {
+  it("handles several authors, missing optional fields, escaped titles and calibre's undefined date", () => {
     const { books } = parseFeed(fixture("new-page-1.xml"));
 
     expect(books[1]).toMatchObject({
@@ -29,6 +32,9 @@ describe("parseFeed", () => {
       authors: ["Harold Abelson", "Gerald Jay Sussman"],
       tags: [],
       year: undefined,
+      publisher: undefined,
+      language: undefined,
+      summary: undefined,
     });
   });
 
@@ -57,6 +63,8 @@ describe("parseFeed", () => {
       authors: ["Gerard Meszaros"],
       tags: ["Programming", "Software Engineering"],
       year: 2007,
+      publisher: "Addison-Wesley",
+      language: "eng",
       updated: "2026-10-08T06:35:57+00:00",
       files: [{ format: "pdf", size: 6348530, path: "/opds/download/659/pdf/" }],
     });

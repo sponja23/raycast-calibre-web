@@ -17,6 +17,9 @@ interface Entry {
   updated: string;
   published?: string;
   author?: { name: string }[];
+  publisher?: { name: string };
+  "dcterms:language"?: string;
+  summary?: string;
   category?: { "@_label": string }[];
   link?: Link[];
 }
@@ -66,6 +69,9 @@ function parseEntry(entry: Entry): Book[] {
       authors: (entry.author ?? []).map((author) => author.name),
       tags: (entry.category ?? []).map((category) => category["@_label"]),
       year: year === UNDEFINED_YEAR ? undefined : year,
+      publisher: entry.publisher?.name,
+      language: entry["dcterms:language"],
+      summary: entry.summary,
       updated: entry.updated,
       files: files.map(({ format, size, path }) => ({ format, size, path })),
     },

@@ -26,6 +26,7 @@ The extension reads the server's OPDS catalog at `/opds` with HTTP basic auth. C
 | Open in Browser   | ⌘↵       | Opens the book in Calibre-Web's reader (uses your browser session) |
 | Open with         | ⌘O       | Picks another app                                                  |
 | Copy Link         | ⌘⇧C      | Copies the book's Calibre-Web page                                 |
+| Show Details      | ⌘D       | Toggles a side panel with the book's metadata and formats          |
 | Remove from Cache | ⌃X       | Deletes the downloaded copy                                        |
 | Clear Cache       | ⌃⇧X      | Deletes every downloaded book                                      |
 
