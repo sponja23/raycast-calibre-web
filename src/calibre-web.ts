@@ -29,9 +29,16 @@ export class NetworkError extends Error {
 }
 
 export class ServerError extends Error {
-  constructor(status: number) {
+  constructor(readonly status: number) {
     super(`The server responded with HTTP ${status}`);
     this.name = "ServerError";
+  }
+}
+
+export class InvalidServerUrlError extends Error {
+  constructor(url: string) {
+    super(`"${url}" is not an http:// or https:// URL`);
+    this.name = "InvalidServerUrlError";
   }
 }
 
@@ -45,6 +52,9 @@ export function createCalibreWebClient(
   const resolve = (path: string) => new URL(path, base).toString();
 
   async function get(path: string, signal?: AbortSignal): Promise<Response> {
+    if (!URL.canParse(base) || !["http:", "https:"].includes(new URL(base).protocol)) {
+      throw new InvalidServerUrlError(config.url);
+    }
     let response: Response;
     try {
       response = await fetch(resolve(path), { headers: { Authorization: authorization }, signal });

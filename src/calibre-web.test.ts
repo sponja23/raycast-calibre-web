@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fixture } from "./__fixtures__/fixture";
-import { AuthError, NetworkError, createCalibreWebClient } from "./calibre-web";
+import { AuthError, InvalidServerUrlError, NetworkError, ServerError, createCalibreWebClient } from "./calibre-web";
 import { InvalidFeedError } from "./opds";
 
 const config = { url: "https://books.example.ts.net/", username: "raycast", password: "s3cret" };
@@ -91,6 +91,31 @@ describe("fetchCatalog edge cases", () => {
       "https://books.example.ts.net/calibre/opds/new",
       "https://books.example.ts.net/calibre/opds/download/3/mobi/",
     ]);
+  });
+});
+
+describe("misconfigured servers", () => {
+  it.each(["books.example.ts.net", "ftp://books.example.ts.net"])(
+    "rejects %s with an InvalidServerUrlError before making a request",
+    async (url) => {
+      const { fetch, requests } = fakeFetch({});
+
+      await expect(createCalibreWebClient({ ...config, url }, fetch).fetchCatalog()).rejects.toBeInstanceOf(
+        InvalidServerUrlError,
+      );
+      expect(requests).toEqual([]);
+    },
+  );
+
+  it("exposes the HTTP status of other failures", async () => {
+    const { fetch } = fakeFetch({});
+
+    const error = await createCalibreWebClient(config, fetch)
+      .fetchCatalog()
+      .catch((error: unknown) => error);
+
+    expect(error).toBeInstanceOf(ServerError);
+    expect((error as ServerError).status).toBe(404);
   });
 });
 

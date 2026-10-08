@@ -1,3 +1,4 @@
 dist/
 package-lock.json
 raycast-env.d.ts
+src/__fixtures__/*.xml
