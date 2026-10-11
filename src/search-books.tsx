@@ -11,7 +11,7 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
-import { showFailureToast, useCachedPromise, useCachedState, usePromise } from "@raycast/utils";
+import { showFailureToast, useCachedPromise, useCachedState, useFrecencySorting, usePromise } from "@raycast/utils";
 import { useMemo, useRef, useState } from "react";
 import { Book, BookFile, preferredFile, readerFile } from "./book";
 import { BookDetail } from "./book-detail";
@@ -40,6 +40,11 @@ export default function Command() {
   );
   hasCachedBooks.current = books.length > 0;
 
+  const { data: ranked, visitItem } = useFrecencySorting(books, {
+    namespace: `opened:${preferences.serverUrl}:${preferences.username}`,
+    key: (book) => String(book.id),
+  });
+
   const formats = useMemo(() => [...new Set(books.flatMap((book) => book.files.map((file) => file.format)))], [books]);
   const { data: apps } = usePromise(defaultApps, [formats], { onError: () => undefined });
 
@@ -49,10 +54,15 @@ export default function Command() {
     return [...counts].sort(([a], [b]) => a.localeCompare(b));
   }, [books]);
 
-  const shown = tag === ALL_BOOKS ? books : books.filter((book) => book.tags.includes(tag));
+  const shown = tag === ALL_BOOKS ? ranked : ranked.filter((book) => book.tags.includes(tag));
+
+  function afterOpen(book: Book, opened: boolean) {
+    refreshCacheIcons();
+    if (opened) void visitItem(book);
+  }
 
   function openWith(book: Book, file: BookFile) {
-    push(<OpenWith book={book} file={file} cache={cache} onOpened={refreshCacheIcons} />);
+    push(<OpenWith book={book} file={file} cache={cache} onOpened={(opened) => afterOpen(book, opened)} />);
   }
 
   async function openDefault(book: Book, file: BookFile, app: Application | undefined) {
@@ -64,8 +74,7 @@ export default function Command() {
       });
       return;
     }
-    await openBook(cache, book.id, file, app);
-    refreshCacheIcons();
+    afterOpen(book, await openBook(cache, book.id, file, app));
   }
 
   async function changeCache(change: () => Promise<void>, done: string) {
@@ -130,7 +139,11 @@ export default function Command() {
                   onAction={() => openDefault(book, file, app)}
                 />
                 {reader && (
-                  <Action.OpenInBrowser title="Open in Browser" url={client.readerUrl(book.id, reader.format)} />
+                  <Action.OpenInBrowser
+                    title="Open in Browser"
+                    url={client.readerUrl(book.id, reader.format)}
+                    onOpen={() => void visitItem(book)}
+                  />
                 )}
                 <Action
                   title="Open with"

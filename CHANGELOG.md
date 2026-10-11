@@ -6,3 +6,4 @@
 - Open books in their default app, another app, or the Calibre-Web reader.
 - Keep opened books in a local cache with a size limit.
 - Show a details panel with the description, metadata and formats of the selected book.
+- List the books you open most often and most recently first.

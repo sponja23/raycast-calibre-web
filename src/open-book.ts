@@ -21,18 +21,20 @@ async function downloadWithToast(cache: FileCache, id: number, file: BookFile): 
   }
 }
 
-export async function openBook(cache: FileCache, id: number, file: BookFile, app?: Application) {
+export async function openBook(cache: FileCache, id: number, file: BookFile, app?: Application): Promise<boolean> {
   let path: string;
   try {
     path = await downloadWithToast(cache, id, file);
   } catch {
-    return;
+    return false;
   }
   try {
     await open(path, app);
+    return true;
   } catch (error) {
     await showFailureToast(error, {
       title: app ? `Could not open the book in ${app.name}` : "Could not open the book",
     });
+    return false;
   }
 }
