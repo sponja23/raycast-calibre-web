@@ -9,7 +9,7 @@ interface OpenWithProps {
   book: Book;
   file: BookFile;
   cache: FileCache;
-  onOpened: () => void;
+  onOpened: (opened: boolean) => void;
 }
 
 export function OpenWith({ book, file, cache, onOpened }: OpenWithProps) {

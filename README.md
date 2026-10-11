@@ -8,6 +8,8 @@ It talks to a Calibre-Web server over the network, so it suits a library that li
 
 The catalog is cached locally, so search is instant and still works offline. Books you open are downloaded once and kept in `~/Library/Caches/raycast-calibre-web`, up to a size limit you choose; opening a book that isn't cached needs the server.
 
+With an empty search bar, books you open often and recently come first, then the rest from newest to oldest added. While you type, results are ranked by how well they match.
+
 ## Setup
 
 The first time you run **Search Books**, Raycast asks for:
