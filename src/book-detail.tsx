@@ -10,8 +10,7 @@ interface BookDetailProps {
 }
 
 export function BookDetail({ book, cache, url }: BookDetailProps) {
-  const heading = `## ${escapeMarkdown(book.title)}`;
-  const markdown = book.summary ? `${heading}\n\n${escapeMarkdown(book.summary)}` : heading;
+  const markdown = book.summary ? `## ${escapeMarkdown(book.title)}\n\n${escapeMarkdown(book.summary)}` : undefined;
   const languages = book.languages ?? [];
   const hasBookFields =
     book.authors.length > 0 || book.tags.length > 0 || book.year || book.publisher || languages.length > 0;
@@ -20,6 +19,7 @@ export function BookDetail({ book, cache, url }: BookDetailProps) {
       markdown={markdown}
       metadata={
         <List.Item.Detail.Metadata>
+          {!markdown && <List.Item.Detail.Metadata.Label title="Title" text={book.title} />}
           {book.authors.length > 0 && (
             <List.Item.Detail.Metadata.Label
               title={book.authors.length > 1 ? "Authors" : "Author"}
